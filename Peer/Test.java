@@ -1,4 +1,4 @@
-package IndexServer;
+package Peer;
 
 import Interfaces.IndexServerInterface;
 
