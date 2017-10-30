@@ -1,7 +1,6 @@
 package Peer;
 
 import Interfaces.IndexServerInterface;
-import Interfaces.PeerServerInterface;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -20,61 +19,15 @@ import java.util.Scanner;
  * Peer part implements services of peer client and peer server
  * Created by xuzhuchen on 9/20/17.
  */
-public class Peer extends UnicastRemoteObject implements PeerServerInterface {
+public class Client extends UnicastRemoteObject {
 
     private PeerInfo info;
 
-    Peer(String sharedDir, String ip, int port) throws RemoteException {
-        info = new PeerInfo(sharedDir, ip, port);
+    Client(PeerInfo info) throws RemoteException{
+        this.info = info;
     }
 
-    @Override
-    public byte[] obtain(String fileName) throws RemoteException {
 
-        // create reader in order to read local file into byte array
-        String pathfile = info.getSharedDir() + "/" + fileName;
-
-        // test if file exists
-        File readfile = new File(pathfile);
-        if (!readfile.exists()) {
-            return null;
-        }
-
-        // File length
-        long size = readfile.length();
-        if (size > Integer.MAX_VALUE) {
-            System.out.println("File is to large");
-        }
-
-        byte[] bytes = new byte[(int)size];
-        DataInputStream dis = null;
-
-        try {
-            dis = new DataInputStream(new FileInputStream(readfile));
-        } catch (FileNotFoundException e) {
-            return null;
-        }
-
-        // Read file & count length of read data
-        int read = 0;
-        int numRead = 0;
-        try {
-            while (read < bytes.length
-                    && (numRead = dis.read(bytes, read, bytes.length - read)) >= 0) {
-                read = read + numRead;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-
-        // Ensure all the bytes have been read in
-        if (read < bytes.length) {
-            System.out.println("Unable to read: " + readfile.getName());
-        }
-        return bytes;
-
-    }
 
     /*
      * Method to set up connection with peer,
@@ -89,7 +42,7 @@ public class Peer extends UnicastRemoteObject implements PeerServerInterface {
         int peerServerPort = Integer.valueOf(a[1]);
 
         // Connect to peer and obtain file
-        PeerServerInterface servingPeer;
+        IndexServerInterface servingPeer;
 
         // byte array that will contain file contents
         byte[] temp = null;
@@ -97,7 +50,7 @@ public class Peer extends UnicastRemoteObject implements PeerServerInterface {
         // attempt to lookup clientserver
         try {
             Registry r = LocateRegistry.getRegistry(peerServerIP, peerServerPort);
-            servingPeer = (PeerServerInterface) r.lookup("download");
+            servingPeer = (IndexServerInterface) r.lookup("download");
             temp = servingPeer.obtain(fileName);
         } catch (NotBoundException e) {
             System.out.println("\nError - Invalid peer entered.  Please enter valid peer");
@@ -167,13 +120,13 @@ public class Peer extends UnicastRemoteObject implements PeerServerInterface {
 
     void start() throws RemoteException {
 
-        String peerServerURL = info.getPeerIP() + ":" + info.getPeerPort();
+        String peerServerURL = info.getClientIP() + ":" + info.getClientPort();
         try {
             /*
              * connect to the index server
              * read all file names and register to index server
              * */
-            Registry r = LocateRegistry.getRegistry(info.getIndexServerIP(), info.getIndexServerPort());
+            Registry r = LocateRegistry.getRegistry(info.getServerIP(), info.getServerPort());
             IndexServerInterface rmiService = (IndexServerInterface) r.lookup("register");
             List<String> fileURIList = readAllFiles(info.getSharedDir());
             rmiService.register(peerServerURL, fileURIList);
@@ -182,10 +135,10 @@ public class Peer extends UnicastRemoteObject implements PeerServerInterface {
              * bind peer Server to a id
              * Get instance of Local Registry with a specific id '10001'
              * */
-            LocateRegistry.createRegistry(info.getPeerPort());
+            LocateRegistry.createRegistry(info.getClientPort());
             String ServerName = "rmi://" + peerServerURL + "/download";
             Naming.bind(ServerName, this);
-            System.out.println("ClientServer running...on id:  " + info.getPeerPort());
+            System.out.println("ClientServer running...on id:  " + info.getClientPort());
 
             // menu
             printMenu(1);
@@ -264,29 +217,10 @@ public class Peer extends UnicastRemoteObject implements PeerServerInterface {
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (AlreadyBoundException e) {
-            System.out.println("\nError - id " + info.getPeerPort()
+            System.out.println("\nError - id " + info.getClientPort()
                     + " is already bound.  Please choose a different id\n");
             System.exit(0);
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void main(String[] args) {
-        try {
-            // without correct terminal input, use default settings
-            if (args.length == 3) {
-                Peer p = new Peer(args[0], args[1], Integer.valueOf(args[2]));
-                p.start();
-                
-            } else if(args.length == 2){
-                Peer p = new Peer(args[0], "127.0.0.1", Integer.valueOf(args[1]));
-                p.start();
-            } else {
-                Peer p = new Peer("Peer1", "127.0.0.1", 10001);
-                p.start();
-            }
-        } catch (RemoteException e) {
             e.printStackTrace();
         }
     }

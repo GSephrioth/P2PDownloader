@@ -27,4 +27,7 @@ public interface IndexServerInterface extends java.rmi.Remote{
     // Unregister function called by peer server when it is about to terminate
     void unregister(String peerServer, List<String> fileNameList) throws RemoteException;
 
+    //method to return file from client
+    byte[] obtain(String fileName) throws RemoteException;
+
 }

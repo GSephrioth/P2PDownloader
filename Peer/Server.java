@@ -2,6 +2,7 @@ package Peer;
 
 import Interfaces.IndexServerInterface;
 
+import java.io.*;
 import java.net.MalformedURLException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.Naming;
@@ -18,15 +19,68 @@ import java.util.Scanner;
  * Indexing Server part implements register service for peer server and search service for peer client.
  * Created by xuzhuchen on 9/20/17.
  */
-public class IndexServer extends UnicastRemoteObject implements IndexServerInterface {
+public class Server extends UnicastRemoteObject implements IndexServerInterface {
 
     private static final long serialVersionUID = -8306441060593704819L;
+    private PeerInfo info;
+    private HashMap<String, List<String>> regisDic = new HashMap<>(); // Dictionary that maps URI of files to the information identifies a specific peer
 
-    // Dictionary that maps URI of files to the information identifies a specific peer
-    private HashMap<String, List<String>> regisDic = new HashMap<>();
-
-    IndexServer() throws RemoteException {
+    Server() throws RemoteException {
         super();
+        info  = new PeerInfo();
+    }
+
+    Server(PeerInfo info) throws RemoteException {
+        super();
+        this.info  = info;
+    }
+
+    @Override
+    public byte[] obtain(String fileName) throws RemoteException {
+
+        // create reader in order to read local file into byte array
+        String pathfile = info.getSharedDir() + "/" + fileName;
+
+        // test if file exists
+        File readfile = new File(pathfile);
+        if (!readfile.exists()) {
+            return null;
+        }
+
+        // File length
+        long size = readfile.length();
+        if (size > Integer.MAX_VALUE) {
+            System.out.println("File is to large");
+        }
+
+        byte[] bytes = new byte[(int)size];
+        DataInputStream dis = null;
+
+        try {
+            dis = new DataInputStream(new FileInputStream(readfile));
+        } catch (FileNotFoundException e) {
+            return null;
+        }
+
+        // Read file & count length of read data
+        int read = 0;
+        int numRead = 0;
+        try {
+            while (read < bytes.length
+                    && (numRead = dis.read(bytes, read, bytes.length - read)) >= 0) {
+                read = read + numRead;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        // Ensure all the bytes have been read in
+        if (read < bytes.length) {
+            System.out.println("Unable to read: " + readfile.getName());
+        }
+        return bytes;
+
     }
 
     @Override
@@ -86,15 +140,15 @@ public class IndexServer extends UnicastRemoteObject implements IndexServerInter
         }
     }
 
-    public static void start(String ip, int port) {
+    public void start() {
 
         try {
             // Get instance of Local Registry with a specific port '10001'
-            IndexServer service = new IndexServer();
-            LocateRegistry.createRegistry(port);
+            Server service = new Server();
+            LocateRegistry.createRegistry(info.getServerPort());
 
             // Run an RMI server: rmi://host:port/url
-            String ServerName = "rmi://" + ip + ":" + port + "/register";
+            String ServerName = "rmi://" + info.getServerIP() + ":" + info.getServerPort() + "/register";
             Naming.bind(ServerName, service);
             System.out.println(">>>>>INFO: RMI Service bind with :" + ServerName);
 
@@ -124,12 +178,5 @@ public class IndexServer extends UnicastRemoteObject implements IndexServerInter
         } catch (NotBoundException e) {
             e.printStackTrace();
         }
-    }
-
-    public static void main(String[] args) {
-        if (args.length != 2)
-            start("127.0.0.1", 10000);
-        else
-            start(args[0], Integer.valueOf(args[1]));
     }
 }
