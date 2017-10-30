@@ -13,6 +13,7 @@ import java.io.Serializable;
 @XmlType(propOrder={"ID","IP","PORT"})
 public class RemoteServerInfo implements Serializable {
 
+    private static final long serialVersionUID = 2L;
     @XmlElement(name = "ID")
     private int ID;
 

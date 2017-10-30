@@ -1,35 +1,26 @@
 package Peer;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.*;
 import javax.xml.bind.annotation.*;
-import java.io.*;
-import java.util.LinkedList;
+import java.io.File;
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Defines all the infomation of a peer
- *
+ * <p>
  * Created by xuzhuchen on 9/20/17.
  */
 
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "PeerInfo")
-@XmlType(propOrder={"SharedDir","ServerIP","ServerPort","ClientIP","ClientPort","RemoteServers"})
 public class PeerInfo implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     // Shared file path of the peer
     @XmlElement(name = "SharedDir")
     private String SharedDir;
-
-    // ip and id of the peer server
-    @XmlElement(name = "ClientIP")
-    private String ClientIP;
-    @XmlElement(name = "ClientPort")
-    private int ClientPort;
 
     // ip and id of the indexing server
     @XmlElement(name = "ServerIP")
@@ -37,19 +28,16 @@ public class PeerInfo implements Serializable {
     @XmlElement(name = "ServerPort")
     private int ServerPort;
 
+    // ip and id of the peer server
+    @XmlElement(name = "ClientIP")
+    private String ClientIP;
+    @XmlElement(name = "ClientPort")
+    private int ClientPort;
+
     // remote server list
     @XmlElementWrapper(name = "RemoteServers")
     @XmlElement(name = "Server")
     private List<RemoteServerInfo> RemoteServers;
-
-    public PeerInfo (){
-        this.SharedDir = "Peer1";
-        this.ClientIP = "127.0.0.1";
-        this.ClientPort = 10001;
-        this.ServerIP = "127.0.0.1";
-        this.ServerPort = 10000;
-        RemoteServers = new LinkedList<>();
-    }
 
     int getClientPort() {
         return ClientPort;
@@ -71,87 +59,47 @@ public class PeerInfo implements Serializable {
         return SharedDir;
     }
 
-    List<RemoteServerInfo> getRemoteServers(){return RemoteServers;}
+    public void setSharedDir(String sharedDir) {
+        SharedDir = sharedDir;
+    }
+
+    public void setClientIP(String clientIP) {
+        ClientIP = clientIP;
+    }
+
+    public void setClientPort(Integer clientPort) {
+        ClientPort = clientPort;
+    }
+
+    public void setServerIP(String serverIP) {
+        ServerIP = serverIP;
+    }
+
+    public void setServerPort(Integer serverPort) {
+        ServerPort = serverPort;
+    }
+
+    List<RemoteServerInfo> getRemoteServers() {
+        return RemoteServers;
+    }
 
     @Override
     public String toString() {
-        return "Peer [Shared Directory=" + SharedDir + ", Client=" + ClientIP+":"+ClientPort
-                + ", LocalServer=" +ServerIP+":"+ServerPort+ "]\n"
-                + "Remote Servers ["+RemoteServers+"]";
+        return "Peer [Shared Directory=" + SharedDir + ", Client=" + ClientIP + ":" + ClientPort
+                + ", LocalServer=" + ServerIP + ":" + ServerPort + "]\n"
+                + "Remote Servers [" + RemoteServers + "]";
     }
 
-    /**
-     * Convert JavaBean into xml encoded with UTF-8
-     * @param obj
-     * @return
+    /*
+    read the config file and convert into a JavaBean
      */
-    public static String convertToXml(Object obj) {
-        return convertToXml(obj, "UTF-8");
-    }
-
-    /**
-     * Convert JavaBean into xml
-     * @param obj
-     * @param encoding
-     * @return
-     */
-    public static String convertToXml(Object obj, String encoding) {
-        String result = null;
-        try {
-            JAXBContext context = JAXBContext.newInstance(obj.getClass());
-            Marshaller marshaller = context.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            marshaller.setProperty(Marshaller.JAXB_ENCODING, encoding);
-            marshaller.setProperty(Marshaller.JAXB_FRAGMENT, false);
-            StringWriter writer = new StringWriter();
-            marshaller.marshal(obj, writer);
-            result = writer.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return result;
-    }
-
-    /**
-     * Convert xml into JavaBean
-     * @param xml
-     * @param c
-     * @return
-     * @throws JAXBException
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T converyToJavaBean(String xml, Class<T> c)
-            throws JAXBException {
-        T t = null;
-        JAXBContext context = JAXBContext.newInstance(c);
-        Unmarshaller unmarshaller = context.createUnmarshaller();
-        t = (T) unmarshaller.unmarshal(new StringReader(xml));
-        return t;
-    }
-
-    public static PeerInfo readConfig(String configFile){
+    public static PeerInfo readConfig(String configFile) {
         File config = new File(configFile);
-        String xml = null;
         PeerInfo info = null;
-        BufferedReader br;
-
         try {
-            br = new BufferedReader(new FileReader(config));
-            StringBuilder sb = new StringBuilder();
-            String temp;
-            while((temp = br.readLine()) != null){
-                sb.append(temp);
-            }
-            xml = sb.toString();
-//            System.out.println(info);
-            br.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            info = PeerInfo.converyToJavaBean(xml,PeerInfo.class);
+            JAXBContext context = JAXBContext.newInstance(PeerInfo.class);
+            Unmarshaller unmarshaller = context.createUnmarshaller();
+            info = (PeerInfo) unmarshaller.unmarshal(config);
         } catch (JAXBException e) {
             e.printStackTrace();
         }
@@ -159,16 +107,21 @@ public class PeerInfo implements Serializable {
         return info;
     }
 
-    public static void writeConfig(String configFile,PeerInfo info){
+    /*
+    write the information to the config file
+     */
+    public static void writeConfig(String configFile, PeerInfo info) {
         File config = new File(configFile);
-        String xml;
         try {
-            BufferedWriter br = new BufferedWriter(new FileWriter(config));
-            xml = convertToXml(info);
-            br.write(xml);
-            br.flush();
-            br.close();
-        } catch (IOException e) {
+            JAXBContext context = JAXBContext.newInstance(info.getClass());
+            Marshaller marshaller = context.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
+            marshaller.setProperty(Marshaller.JAXB_FRAGMENT, false);
+            marshaller.marshal(info, config);
+        } catch (PropertyException e) {
+            e.printStackTrace();
+        } catch (JAXBException e) {
             e.printStackTrace();
         }
     }

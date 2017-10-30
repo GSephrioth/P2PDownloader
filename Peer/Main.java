@@ -16,10 +16,14 @@ public class Main {
     static Server server;
     static Client client;
 
-
-
     public static void main(String args[]){
-        info = PeerInfo.readConfig("CONFIG.xml");
+
+        String cfgFile;
+        if (args.length < 1)
+            cfgFile = "Peer1/CONFIG.xml";
+        else
+            cfgFile = args[0];
+        info = PeerInfo.readConfig(cfgFile);
         System.out.println(info);
         try {
             server = new Server(info);
@@ -27,7 +31,7 @@ public class Main {
         } catch (RemoteException e) {
             e.printStackTrace();
         }
-        return;
+        System.exit(0);
     }
 
 

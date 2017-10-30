@@ -27,8 +27,6 @@ public class Client extends UnicastRemoteObject {
         this.info = info;
     }
 
-
-
     /*
      * Method to set up connection with peer,
      * call obtain() to get file,
