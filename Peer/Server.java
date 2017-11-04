@@ -1,6 +1,6 @@
 package Peer;
 
-import Interfaces.IndexServerInterface;
+import Interfaces.ServerInterface;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -13,26 +13,45 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Scanner;
 
 /**
  * Indexing Server part implements register service for peer server and search service for peer client.
  * Created by xuzhuchen on 9/20/17.
  */
-public class Server extends UnicastRemoteObject implements IndexServerInterface {
+public class Server extends UnicastRemoteObject implements ServerInterface, Runnable {
 
     private static final long serialVersionUID = -8306441060593704819L;
-    private PeerInfo info;
-    private HashMap<String, List<String>> regisDic = new HashMap<>(); // Dictionary that maps URI of files to the information identifies a specific peer
+    PeerInfo info;
+    private String threadName;
+    String serverName;
+    private HashMap<String, List<String>> regisDic;
+    HashMap<String,ServerInterface> servers;
 
-    Server() throws RemoteException {
-        super();
-        info  = new PeerInfo();
-    }
-
-    Server(PeerInfo info) throws RemoteException {
+    Server(PeerInfo info, HashMap<String, List<String>> regisDic) throws RemoteException {
         super();
         this.info  = info;
+        this.regisDic = regisDic;
+        threadName = info.getSharedDir()+"ServerThread";
+        serverName = "rmi://" + info.getServerIP() + ":" + info.getServerPort() + "/server";
+    }
+
+    /*
+     * try to find all servers listed in the CONFIG.xml
+     * connect to found servers
+     */
+    private void findALLServers(){
+        for (RemoteServerInfo server: info.getRemoteServers()){
+            String ServerURL = server.getIP() + ":" + server.getPORT();
+
+            ServerInterface rmiService = null;
+            try {
+                rmiService = (ServerInterface) LocateRegistry.getRegistry(server.getIP(), server.getPORT()).lookup("server");
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            } catch (NotBoundException e) {
+            }
+            servers.put(ServerURL,rmiService);
+        }
     }
 
     @Override
@@ -140,33 +159,21 @@ public class Server extends UnicastRemoteObject implements IndexServerInterface 
         }
     }
 
-    public void start() {
-
+    @Override
+    public void run() {
         try {
             // Get instance of Local Registry with a specific port '10001'
-            Server service = new Server();
             LocateRegistry.createRegistry(info.getServerPort());
-
             // Run an RMI server: rmi://host:port/url
-            String ServerName = "rmi://" + info.getServerIP() + ":" + info.getServerPort() + "/register";
-            Naming.bind(ServerName, service);
-            System.out.println(">>>>>INFO: RMI Service bind with :" + ServerName);
+            Naming.bind(serverName, this);
+            System.out.println(">>>>>INFO: RMI Service bind with :" + serverName);
 
-            // Terminate the server when admin enter 'exit'.
-            String exit = "";
-            System.out.println("Enter 'exit' to terminate the server! ");
-            System.out.println("Enter 'ls' to list all the files registered! ");
-            while (!exit.equals("exit")) {
-                Scanner scan = new Scanner(System.in);
-                exit = scan.nextLine();
-                if (exit.equals("ls")) {
-                    service.listAll().forEach(s -> System.out.println(s));
-                }
+            // synchronize with other servers every second
+            while (true){
+                findALLServers();
+
+                Thread.sleep(1000);
             }
-            //unbind and exit
-            Naming.unbind(ServerName);
-            System.exit(0);
-
         } catch (NumberFormatException e) {
             e.printStackTrace();
         } catch (RemoteException e) {
@@ -175,8 +182,17 @@ public class Server extends UnicastRemoteObject implements IndexServerInterface 
             e.printStackTrace();
         } catch (AlreadyBoundException e) {
             e.printStackTrace();
-        } catch (NotBoundException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    public void start () {
+        Thread t ;
+        System.out.println("Starting " +  threadName );
+        t = new Thread (this, threadName);
+        t.setDaemon(true);
+        t.start ();
+
     }
 }

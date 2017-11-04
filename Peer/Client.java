@@ -1,17 +1,16 @@
 package Peer;
 
-import Interfaces.IndexServerInterface;
+import Interfaces.ServerInterface;
 
 import java.io.*;
 import java.net.MalformedURLException;
-import java.rmi.AlreadyBoundException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 
@@ -19,12 +18,17 @@ import java.util.Scanner;
  * Peer part implements services of peer client and peer server
  * Created by xuzhuchen on 9/20/17.
  */
-public class Client extends UnicastRemoteObject {
+public class Client extends UnicastRemoteObject implements Runnable {
 
-    private PeerInfo info;
+    PeerInfo info;
+    private HashMap<String, List<String>> regisDic;
+    private Thread t;
+    private String threadName;
 
-    Client(PeerInfo info) throws RemoteException{
+    Client(PeerInfo info, HashMap<String, List<String>> regisDic) throws RemoteException{
         this.info = info;
+        this.regisDic = regisDic;
+        threadName = info.getSharedDir()+"ServerThread";
     }
 
     /*
@@ -40,7 +44,7 @@ public class Client extends UnicastRemoteObject {
         int peerServerPort = Integer.valueOf(a[1]);
 
         // Connect to peer and obtain file
-        IndexServerInterface servingPeer;
+        ServerInterface servingPeer;
 
         // byte array that will contain file contents
         byte[] temp = null;
@@ -48,7 +52,7 @@ public class Client extends UnicastRemoteObject {
         // attempt to lookup clientserver
         try {
             Registry r = LocateRegistry.getRegistry(peerServerIP, peerServerPort);
-            servingPeer = (IndexServerInterface) r.lookup("download");
+            servingPeer = (ServerInterface) r.lookup("server");
             temp = servingPeer.obtain(fileName);
         } catch (NotBoundException e) {
             System.out.println("\nError - Invalid peer entered.  Please enter valid peer");
@@ -78,28 +82,9 @@ public class Client extends UnicastRemoteObject {
     }
 
     /*
-     * Method to read all the file in the shared directory,
-     * get file name of all the files, put in a list and return
+     * x = 1 for main menu
+     * x = 2 for download menu
      */
-    private List<String> readAllFiles(String filePath) {
-        List<String> fileURIList = new LinkedList<>();
-        if (filePath == null || filePath.isEmpty()) return fileURIList;
-
-        try {
-            File f = new File(filePath);
-            File[] files = f.listFiles(); // 得到f文件夹下面的所有文件。
-
-            for (File file : files) {
-                fileURIList.add(file.getName());
-//                System.out.println(file.getName());
-            }
-        } catch (NullPointerException e) {
-            System.out.println("File Path not found!");
-        }
-
-        return fileURIList;
-    }
-
     private void printMenu(int x) {
         switch (x) {
             case 1: {
@@ -116,27 +101,32 @@ public class Client extends UnicastRemoteObject {
 
     }
 
-    void start() throws RemoteException {
 
-        String peerServerURL = info.getClientIP() + ":" + info.getClientPort();
+
+    @Override
+    public void run() {
+
+//        String peerServerURL = info.getClientIP() + ":" + info.getClientPort();
+
         try {
             /*
              * connect to the index server
              * read all file names and register to index server
              * */
-            Registry r = LocateRegistry.getRegistry(info.getServerIP(), info.getServerPort());
-            IndexServerInterface rmiService = (IndexServerInterface) r.lookup("register");
-            List<String> fileURIList = readAllFiles(info.getSharedDir());
-            rmiService.register(peerServerURL, fileURIList);
+//            System.out.println(info.getServerIP()+":"+info.getServerPort());
+//            Registry r = LocateRegistry.getRegistry(info.getServerIP(), info.getServerPort());
+//            ServerInterface rmiService = (ServerInterface) r.lookup("server");
+//            List<String> fileURIList = info.getLocalFileList();
+//            rmiService.register(peerServerURL, fileURIList);
 
             /*
              * bind peer Server to a id
              * Get instance of Local Registry with a specific id '10001'
              * */
-            LocateRegistry.createRegistry(info.getClientPort());
-            String ServerName = "rmi://" + peerServerURL + "/download";
-            Naming.bind(ServerName, this);
-            System.out.println("ClientServer running...on id:  " + info.getClientPort());
+//            LocateRegistry.createRegistry(info.getClientPort());
+//            String serverName = "rmi://" + peerServerURL + "/download";
+//            Naming.bind(serverName, this);
+//            System.out.println("ClientServer running...on id:  " + info.getClientPort());
 
             // menu
             printMenu(1);
@@ -202,24 +192,34 @@ public class Client extends UnicastRemoteObject {
             }
 
             // unregister, unbind and exit
-            rmiService.unregister(peerServerURL, fileURIList);
-            Naming.unbind(ServerName);
+
+//            rmiService.unregister(peerServerURL, fileURIList);
+//            Naming.unbind(serverName);
             System.exit(0);
 
         } catch (NotBoundException e) {
             System.out.println("Not bound Exception!");
-            e.printStackTrace();
         } catch (RemoteException e) {
             System.out.println("Remote Exception!");
             e.printStackTrace();
         } catch (MalformedURLException e) {
             e.printStackTrace();
-        } catch (AlreadyBoundException e) {
-            System.out.println("\nError - id " + info.getClientPort()
-                    + " is already bound.  Please choose a different id\n");
-            System.exit(0);
-        } catch (IOException e) {
+        }
+//        } catch (AlreadyBoundException e) {
+//            System.out.println("\nError - id " + info.getClientPort()
+//                    + " is already bound.  Please choose a different id\n");
+//            System.exit(0);
+//        }
+        catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void start () {
+        System.out.println("Starting " +  threadName );
+        if (t == null) {
+            t = new Thread (this, threadName);
+            t.start ();
         }
     }
 }

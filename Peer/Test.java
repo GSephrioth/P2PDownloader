@@ -1,6 +1,6 @@
 package Peer;
 
-import Interfaces.IndexServerInterface;
+import Interfaces.ServerInterface;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -39,7 +39,7 @@ public class Test {
             try {
                 long startTime = System.currentTimeMillis();
                 Registry r = LocateRegistry.getRegistry("127.0.0.1", 10000);
-                IndexServerInterface rmiService = (IndexServerInterface) r.lookup("register");
+                ServerInterface rmiService = (ServerInterface) r.lookup("register");
                 for (int i = 0; i < k; i++) {
                     rmiService.listAll();
                 }

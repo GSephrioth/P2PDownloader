@@ -8,7 +8,7 @@ import java.util.List;
  *
  * Created by xuzhuchen on 9/20/17.
  */
-public interface IndexServerInterface extends java.rmi.Remote{
+public interface ServerInterface extends java.rmi.Remote{
 
     /*
     Search function called by peer client
@@ -29,5 +29,4 @@ public interface IndexServerInterface extends java.rmi.Remote{
 
     //method to return file from client
     byte[] obtain(String fileName) throws RemoteException;
-
 }

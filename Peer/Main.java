@@ -1,6 +1,8 @@
 package Peer;
 
 import java.rmi.RemoteException;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * The main class to start a Peer
@@ -15,6 +17,7 @@ public class Main {
     static PeerInfo info;
     static Server server;
     static Client client;
+    static private HashMap<String, List<String>> regisDic = new HashMap<>();
 
     public static void main(String args[]){
 
@@ -26,12 +29,14 @@ public class Main {
         info = PeerInfo.readConfig(cfgFile);
         System.out.println(info);
         try {
-            server = new Server(info);
-            client = new Client(info);
+            server = new Server(info,regisDic);
+            client = new Client(info,regisDic);
+
+            server.start();
+            client.start();
         } catch (RemoteException e) {
             e.printStackTrace();
         }
-        System.exit(0);
     }
 
 
