@@ -1,46 +1,44 @@
 <PeerInfo>
-    <Local>
-        <SharedDir>Peer1</SharedDir>
-        <ServerIP>127.0.0.1</ServerIP>
-        <ServerPORT>10000</ServerPORT>
-        <ClientIP>127.0.0.1</ClientIP>
-        <ClientPORT>20001</ClientPORT>
-    </Local>
+    <SharedDir>Peer1</SharedDir>
+    <ServerIP>127.0.0.1</ServerIP>
+    <ServerPort>10001</ServerPort>
+    <ClientIP>127.0.0.1</ClientIP>
+    <ClientPort>20001</ClientPort>
     <RemoteServers>
         <Server>
             <ID>2</ID>
             <IP>127.0.0.1</IP>
-            <PORT>10001</PORT>
+            <PORT>10002</PORT>
         </Server>
         <Server>
             <ID>3</ID>
             <IP>127.0.0.1</IP>
-            <PORT>10002</PORT>
+            <PORT>10003</PORT>
         </Server>
         <Server>
             <ID>4</ID>
             <IP>127.0.0.1</IP>
-            <PORT>10003</PORT>
+            <PORT>10004</PORT>
         </Server>
         <Server>
             <ID>5</ID>
             <IP>127.0.0.1</IP>
-            <PORT>10004</PORT>
+            <PORT>10005</PORT>
         </Server>
         <Server>
             <ID>6</ID>
             <IP>127.0.0.1</IP>
-            <PORT>10005</PORT>
+            <PORT>10006</PORT>
         </Server>
         <Server>
             <ID>7</ID>
             <IP>127.0.0.1</IP>
-            <PORT>10006</PORT>
+            <PORT>10007</PORT>
         </Server>
         <Server>
             <ID>8</ID>
             <IP>127.0.0.1</IP>
-            <PORT>10007</PORT>
+            <PORT>10008</PORT>
         </Server>
     </RemoteServers>
 </PeerInfo>

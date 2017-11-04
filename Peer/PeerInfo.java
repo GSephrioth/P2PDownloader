@@ -131,26 +131,5 @@ public class PeerInfo implements Serializable {
         }
     }
 
-    /*
-     * Method to read all the file in the shared directory,
-     * get file name of all the files, put in a list and return
-     */
-    List<String> getLocalFileList() {
-        List<String> fileURIList = new LinkedList<>();
-        if (sharedDir == null || sharedDir.isEmpty()) return fileURIList;
 
-        try {
-            File f = new File(sharedDir);
-            File[] files = f.listFiles(); // 得到f文件夹下面的所有文件。
-
-            for (File file : files) {
-                fileURIList.add(file.getName());
-//                System.out.println(file.getName());
-            }
-        } catch (NullPointerException e) {
-            System.out.println("File Path not found!");
-        }
-
-        return fileURIList;
-    }
 }
