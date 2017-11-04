@@ -1,22 +1,15 @@
 <?xml version="1.0"?>
-<project name="Assignment1" basedir="." default="buildAll">
-  <property name="out" value="out"/>
-  <property name="name" value="Assignment1"/>
+<project name="Assignment1" basedir="." default="build">
+  <property name="out" value=""/>
+  <property name="name" value="Assignment2"/>
 
-  <target name="buildAll" description="Compile source tree java files">
+  <target name="build" description="Compile source tree java files">
     <delete>
       <fileset dir="${out}" includes="**/*.class"/>
     </delete>
     <mkdir dir="${out}"/>
     <javac destdir="${out}" source="1.8" target="1.8">
       <src path="."/>
-    </javac>
-  </target>
-
-  <target name="buildTest" description="Clean output directories">
-    <delete file="${out}/IndexServer/Test.class"/>
-    <javac destdir="${out}" srcdir="." source="1.8" target="1.8">
-      <include name="IndexServer/Test.java"/>
     </javac>
   </target>
 

@@ -11,6 +11,7 @@ import java.util.List;
  * 2. Start a Server, register all the local files.
  * 3. Synchronize the Dictionary with other servers in the network.
  * 4. Start a Client.
+ *
  * Created by xuzhuchen on 10/23/17.
  */
 public class Main {
@@ -20,7 +21,6 @@ public class Main {
     static private HashMap<String, List<String>> regisDic = new HashMap<>();
 
     public static void main(String args[]){
-
         String cfgFile;
         if (args.length < 1)
             cfgFile = "Peer1/CONFIG.xml";
@@ -38,6 +38,4 @@ public class Main {
             e.printStackTrace();
         }
     }
-
-
 }
