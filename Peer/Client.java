@@ -106,28 +106,7 @@ public class Client extends UnicastRemoteObject implements Runnable {
     @Override
     public void run() {
 
-//        String peerServerURL = info.getClientIP() + ":" + info.getClientPort();
-
         try {
-            /*
-             * connect to the index server
-             * read all file names and register to index server
-             * */
-//            System.out.println(info.getServerIP()+":"+info.getServerPort());
-//            Registry r = LocateRegistry.getRegistry(info.getServerIP(), info.getServerPort());
-//            ServerInterface rmiService = (ServerInterface) r.lookup("server");
-//            List<String> fileURIList = info.getLocalFileList();
-//            rmiService.register(peerServerURL, fileURIList);
-
-            /*
-             * bind peer Server to a id
-             * Get instance of Local Registry with a specific id '10001'
-             * */
-//            LocateRegistry.createRegistry(info.getClientPort());
-//            String serverName = "rmi://" + peerServerURL + "/download";
-//            Naming.bind(serverName, this);
-//            System.out.println("ClientServer running...on id:  " + info.getClientPort());
-
             // menu
             printMenu(1);
             Scanner userInput = new Scanner(System.in);
@@ -189,11 +168,7 @@ public class Client extends UnicastRemoteObject implements Runnable {
                         printMenu(1);
                 }
             }
-
-            // unregister, unbind and exit
-
-//            rmiService.unregister(peerServerURL, fileURIList);
-//            Naming.unbind(serverName);
+            // exit
             System.exit(0);
 
         } catch (RemoteException e) {
@@ -201,13 +176,7 @@ public class Client extends UnicastRemoteObject implements Runnable {
             e.printStackTrace();
         } catch (MalformedURLException e) {
             e.printStackTrace();
-        }
-//        } catch (AlreadyBoundException e) {
-//            System.out.println("\nError - id " + info.getClientPort()
-//                    + " is already bound.  Please choose a different id\n");
-//            System.exit(0);
-//        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

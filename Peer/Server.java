@@ -49,6 +49,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
             try {
                 rmiService = (ServerInterface) LocateRegistry.getRegistry(server.getIP(), server.getPORT()).lookup("server");
             } catch (RemoteException | NotBoundException e) {
+                /*
+                 It is fine if some servers are not available.
+                 Thus, do nothing even if there is a exception
+                  */
             }
             servers.put(ServerURL,rmiService);
         }
@@ -69,11 +73,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
 
         try {
             File f = new File(sharedDir);
-            File[] files = f.listFiles(); // 得到f文件夹下面的所有文件。
+            File[] files = f.listFiles(); // get all the files under f
 
             for (File file : files) {
                 fileURIList.add(file.getName());
-//                System.out.println(file.getName());
             }
         } catch (NullPointerException e) {
             System.out.println("File Path not found!");
@@ -156,16 +159,13 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
         if (regisDic.containsKey(fileName)) {
             List<String> tmp = regisDic.get(fileName);
             // if the peer and file mapping does not exist, add the peer
-            if (!tmp.contains(peerServer)) {
+            if (!tmp.contains(peerServer))
                 tmp.add(peerServer);
-//                System.out.println("peer and file added: " + peerServer + "\t" + fileName);
-            }
         } else {
             // if file is not in the dictionary, add file and peer
             List<String> list = new LinkedList<>();
             list.add(peerServer);
             regisDic.put(fileName, list);
-//            System.out.println("peer and file added: " + peerServer + "\t" + fileName);
         }
 
     }
@@ -177,10 +177,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
             if (regisDic.containsKey(fileName)) {
                 List<String> tmp = regisDic.get(fileName);
                 // if the peer and file mapping exist, delete the peer
-                if (tmp.contains(peerServer)) {
+                if (tmp.contains(peerServer))
                     tmp.remove(peerServer);
-//                    System.out.println("peer and file deleted: " + peerServer + "\t" + fileName);
-                }
                 // if the file name does not register to any file, delete the pair
                 if (tmp.isEmpty()) regisDic.remove(fileName);
             }
@@ -196,7 +194,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
             LocateRegistry.createRegistry(info.getServerPort());
             // Run an RMI server: rmi://host:port/url
             Naming.bind("rmi://" + serverURL + "/server", this);
-//            System.out.println(">>>>>INFO: RMI Service bind with :" + serverName);
 
             //synchronize with other servers every second
             while (true){
