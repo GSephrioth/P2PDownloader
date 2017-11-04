@@ -2,6 +2,7 @@ package Peer;
 
 import Interfaces.ServerInterface;
 
+import javax.swing.text.html.parser.Entity;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.rmi.AlreadyBoundException;
@@ -21,37 +22,64 @@ import java.util.List;
 public class Server extends UnicastRemoteObject implements ServerInterface, Runnable {
 
     private static final long serialVersionUID = -8306441060593704819L;
-    PeerInfo info;
+    private PeerInfo info;
     private String threadName;
-    String serverName;
+    private String serverURL;
     private HashMap<String, List<String>> regisDic;
-    HashMap<String,ServerInterface> servers;
 
     Server(PeerInfo info, HashMap<String, List<String>> regisDic) throws RemoteException {
         super();
         this.info  = info;
         this.regisDic = regisDic;
-        threadName = info.getSharedDir()+"ServerThread";
-        serverName = "rmi://" + info.getServerIP() + ":" + info.getServerPort() + "/server";
+        threadName = info.getSharedDir()+"-ServerThread";
+        serverURL = info.getServerIP() + ":" + info.getServerPort();
     }
 
     /*
      * try to find all servers listed in the CONFIG.xml
-     * connect to found servers
+     * get current files in the local shared directory
+     * synchronize with found servers
      */
-    private void findALLServers(){
+    private void synchronize() throws RemoteException{
+        HashMap<String,ServerInterface> servers = new HashMap<>();
         for (RemoteServerInfo server: info.getRemoteServers()){
             String ServerURL = server.getIP() + ":" + server.getPORT();
 
             ServerInterface rmiService = null;
             try {
                 rmiService = (ServerInterface) LocateRegistry.getRegistry(server.getIP(), server.getPORT()).lookup("server");
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            } catch (NotBoundException e) {
+            } catch (RemoteException | NotBoundException e) {
             }
             servers.put(ServerURL,rmiService);
         }
+        for(ServerInterface server: servers.values()){
+            if (server != null)
+                server.register(serverURL,getLocalFileList());
+        }
+    }
+
+    /*
+     * Method to read all the file in the shared directory,
+     * get file name of all the files, put in a list and return
+     */
+    List<String> getLocalFileList() {
+        List<String> fileURIList = new LinkedList<>();
+        String sharedDir = info.getSharedDir();
+        if (sharedDir == null || sharedDir.isEmpty()) return fileURIList;
+
+        try {
+            File f = new File(sharedDir);
+            File[] files = f.listFiles(); // 得到f文件夹下面的所有文件。
+
+            for (File file : files) {
+                fileURIList.add(file.getName());
+//                System.out.println(file.getName());
+            }
+        } catch (NullPointerException e) {
+            System.out.println("File Path not found!");
+        }
+
+        return fileURIList;
     }
 
     @Override
@@ -130,14 +158,14 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
             // if the peer and file mapping does not exist, add the peer
             if (!tmp.contains(peerServer)) {
                 tmp.add(peerServer);
-                System.out.println("peer and file added: " + peerServer + "\t" + fileName);
+//                System.out.println("peer and file added: " + peerServer + "\t" + fileName);
             }
         } else {
             // if file is not in the dictionary, add file and peer
             List<String> list = new LinkedList<>();
             list.add(peerServer);
             regisDic.put(fileName, list);
-            System.out.println("peer and file added: " + peerServer + "\t" + fileName);
+//            System.out.println("peer and file added: " + peerServer + "\t" + fileName);
         }
 
     }
@@ -151,7 +179,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
                 // if the peer and file mapping exist, delete the peer
                 if (tmp.contains(peerServer)) {
                     tmp.remove(peerServer);
-                    System.out.println("peer and file deleted: " + peerServer + "\t" + fileName);
+//                    System.out.println("peer and file deleted: " + peerServer + "\t" + fileName);
                 }
                 // if the file name does not register to any file, delete the pair
                 if (tmp.isEmpty()) regisDic.remove(fileName);
@@ -162,16 +190,17 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
     @Override
     public void run() {
         try {
+            // register local files
+            register(serverURL,getLocalFileList());
             // Get instance of Local Registry with a specific port '10001'
             LocateRegistry.createRegistry(info.getServerPort());
             // Run an RMI server: rmi://host:port/url
-            Naming.bind(serverName, this);
-            System.out.println(">>>>>INFO: RMI Service bind with :" + serverName);
+            Naming.bind("rmi://" + serverURL + "/server", this);
+//            System.out.println(">>>>>INFO: RMI Service bind with :" + serverName);
 
-            // synchronize with other servers every second
+            //synchronize with other servers every second
             while (true){
-                findALLServers();
-
+                synchronize();
                 Thread.sleep(1000);
             }
         } catch (NumberFormatException e) {

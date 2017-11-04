@@ -28,7 +28,7 @@ public class Client extends UnicastRemoteObject implements Runnable {
     Client(PeerInfo info, HashMap<String, List<String>> regisDic) throws RemoteException{
         this.info = info;
         this.regisDic = regisDic;
-        threadName = info.getSharedDir()+"ServerThread";
+        threadName = info.getSharedDir()+"-ClientThread";
     }
 
     /*
@@ -137,7 +137,7 @@ public class Client extends UnicastRemoteObject implements Runnable {
                 switch (temp) {
                     case "1": {
                         System.out.println("Registered files :");
-                        rmiService.listAll().forEach(s -> System.out.println(s));
+                        regisDic.keySet().forEach(System.out::println);
                         printMenu(1);
                         break;
                     }
@@ -146,7 +146,7 @@ public class Client extends UnicastRemoteObject implements Runnable {
                         while (userInput.hasNext()) {
                             // get file name and call for remote search
                             String filename = userInput.next();
-                            List<String> peerServerList = rmiService.search(filename);
+                            List<String> peerServerList = regisDic.get(filename);
 
                             // if search result is not null, print
                             if (peerServerList != null) {
@@ -155,20 +155,19 @@ public class Client extends UnicastRemoteObject implements Runnable {
                                 for (int i = 0; i < peerServerList.size(); i++) {
                                     System.out.println((i + 1) + ".  " + peerServerList.get(i));
                                 }
+
+                                // Ask user to select a server for download
                                 System.out.println("\nPlease input number of the server");
                                 System.out.println("type 0 to go back to main menu");
-
-                                // Download file from peer server
                                 while (userInput.hasNextInt()) {
                                     int x = userInput.nextInt();
                                     if (x == 0) {
                                         printMenu(1);
                                         continue outer;
                                     } else if (x <= peerServerList.size() && x > 0) {
+                                        // download the file
                                         getFile(filename, peerServerList.get(x - 1), info.getSharedDir());
                                         System.out.println("Downloaded file: "+ filename);
-                                        // register file to index server
-                                        rmiService.register(peerServerURL, filename);
                                         printMenu(1);
                                         continue outer;
                                     } else System.out.println("Please input the right number of the server");
@@ -197,8 +196,6 @@ public class Client extends UnicastRemoteObject implements Runnable {
 //            Naming.unbind(serverName);
             System.exit(0);
 
-        } catch (NotBoundException e) {
-            System.out.println("Not bound Exception!");
         } catch (RemoteException e) {
             System.out.println("Remote Exception!");
             e.printStackTrace();
