@@ -32,7 +32,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
     private String threadName;
     private String serverURL;
     private HashMap<String, List<String>> regisDic;
-    private List<String> localFileList;
 
     Server(PeerInfo info, HashMap<String, List<String>> regisDic) throws RemoteException {
         super();
@@ -40,7 +39,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
         this.regisDic = regisDic;
         threadName = info.getSharedDir()+"-ServerThread";
         serverURL = info.getServerIP() + ":" + info.getServerPort();
-        localFileList = getLocalFileList();
     }
 
     String getServerURL() {
@@ -52,11 +50,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
          * get current files in the local shared directory
          * synchronize with found servers
          */
-    public void synchronize() throws RemoteException{
-        // if files in local shared dir are same as last synchronization, do not need to synchronize
-        if (localFileList.containsAll(getLocalFileList()))return;
-
+    void synchronize() throws RemoteException{
         HashMap<String,ServerInterface> servers = new HashMap<>();
+
         for (RemoteServerInfo server: info.getRemoteServers()){
             String ServerURL = server.getIP() + ":" + server.getPORT();
 
@@ -73,7 +69,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
         }
         for(ServerInterface server: servers.values()){
             if (server != null)
-                server.register(serverURL,localFileList);
+                server.register(serverURL,getLocalFileList());
         }
     }
 
@@ -209,7 +205,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
     }
 
     void start () {
-        Thread t ;
+        Thread t;
         System.out.println("Starting " +  threadName );
         t = new Thread (this, threadName);
         t.setDaemon(true);

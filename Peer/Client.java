@@ -90,7 +90,7 @@ public class Client extends UnicastRemoteObject implements Runnable {
     private void printMenu(int x) {
         switch (x) {
             case 1: {
-                System.out.println("\n1. List all files on 'Indexing Server'.");
+                System.out.println("\n1. List all files.");
                 System.out.println("2. Search for a file.");
                 System.out.println("3. Exit.");
                 break;
