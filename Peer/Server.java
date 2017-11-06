@@ -16,7 +16,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Indexing Server part implements register service for peer server and search service for peer client.
+ * This is Server part.
+ * Methods:
+ *     obtain: Providing file download service for remote clients;
+ *     register: Providing register service for remote servers;
+ *     synchronize: Synchronizing file list in local shared directory with remote servers;
+ *     search: Providing search service for remote clients to search file directory.
+ *
  * Created by xuzhuchen on 9/20/17.
  */
 public class Server extends UnicastRemoteObject implements ServerInterface, Runnable {
@@ -26,6 +32,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
     private String threadName;
     private String serverURL;
     private HashMap<String, List<String>> regisDic;
+    private List<String> localFileList;
 
     Server(PeerInfo info, HashMap<String, List<String>> regisDic) throws RemoteException {
         super();
@@ -33,14 +40,22 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
         this.regisDic = regisDic;
         threadName = info.getSharedDir()+"-ServerThread";
         serverURL = info.getServerIP() + ":" + info.getServerPort();
+        localFileList = getLocalFileList();
+    }
+
+    String getServerURL() {
+        return serverURL;
     }
 
     /*
-     * try to find all servers listed in the CONFIG.xml
-     * get current files in the local shared directory
-     * synchronize with found servers
-     */
-    private void synchronize() throws RemoteException{
+         * try to find all servers listed in the CONFIG.xml
+         * get current files in the local shared directory
+         * synchronize with found servers
+         */
+    public void synchronize() throws RemoteException{
+        // if files in local shared dir are same as last synchronization, do not need to synchronize
+        if (localFileList.containsAll(getLocalFileList()))return;
+
         HashMap<String,ServerInterface> servers = new HashMap<>();
         for (RemoteServerInfo server: info.getRemoteServers()){
             String ServerURL = server.getIP() + ":" + server.getPORT();
@@ -58,7 +73,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
         }
         for(ServerInterface server: servers.values()){
             if (server != null)
-                server.register(serverURL,getLocalFileList());
+                server.register(serverURL,localFileList);
         }
     }
 
@@ -66,7 +81,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
      * Method to read all the file in the shared directory,
      * get file name of all the files, put in a list and return
      */
-    List<String> getLocalFileList() {
+    private List<String> getLocalFileList() {
         List<String> fileURIList = new LinkedList<>();
         String sharedDir = info.getSharedDir();
         if (sharedDir == null || sharedDir.isEmpty()) return fileURIList;
@@ -139,11 +154,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
     }
 
     @Override
-    public List<String> listAll() throws RemoteException {
-        return new LinkedList<>(regisDic.keySet());
-    }
-
-    @Override
     public void register(String peerServer, List<String> fileNameList) throws RemoteException{
         fileNameList.forEach(filename -> {
             try {
@@ -168,21 +178,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
             regisDic.put(fileName, list);
         }
 
-    }
-
-    @Override
-    public void unregister(String peerServer, List<String> fileNameList) throws RemoteException{
-        for (String fileName : fileNameList) {
-            // if file is in the dictionary, do nothing
-            if (regisDic.containsKey(fileName)) {
-                List<String> tmp = regisDic.get(fileName);
-                // if the peer and file mapping exist, delete the peer
-                if (tmp.contains(peerServer))
-                    tmp.remove(peerServer);
-                // if the file name does not register to any file, delete the pair
-                if (tmp.isEmpty()) regisDic.remove(fileName);
-            }
-        }
     }
 
     @Override
@@ -213,7 +208,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface, Runn
         }
     }
 
-    public void start () {
+    void start () {
         Thread t ;
         System.out.println("Starting " +  threadName );
         t = new Thread (this, threadName);

@@ -15,7 +15,9 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * Peer part implements services of peer client and peer server
+ * This is Client part, running as a thread.
+ * It is responsible for printing menus and handling user input
+ *
  * Created by xuzhuchen on 9/20/17.
  */
 public class Client extends UnicastRemoteObject implements Runnable {
@@ -36,7 +38,7 @@ public class Client extends UnicastRemoteObject implements Runnable {
      * call obtain() to get file,
      * write file to local shared directory
      */
-    private static void getFile(String fileName, String peerServer, String saveDir) throws IOException {
+    void getFile(String fileName, String peerServer, String saveDir) throws IOException {
 
         // Detach information of peer Server
         String[] a = peerServer.split(":");
@@ -100,8 +102,6 @@ public class Client extends UnicastRemoteObject implements Runnable {
         }
 
     }
-
-
 
     @Override
     public void run() {
@@ -181,7 +181,7 @@ public class Client extends UnicastRemoteObject implements Runnable {
         }
     }
 
-    public void start () {
+    void start () {
         System.out.println("Starting " +  threadName );
         if (t == null) {
             t = new Thread (this, threadName);
