@@ -30,14 +30,14 @@ public class Tests {
 
     @Test
     public void registerTest() throws RemoteException {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 25000; i++) {
             s.register(pi.getServerIP()+":"+pi.getServerPort(), "registerTest.txt");
         }
     }
 
     @Test
     public void syncTest() throws RemoteException {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 500; i++) {
             s.synchronize();
         }
     }
@@ -48,9 +48,8 @@ public class Tests {
         Main.main(peer2cfg);
         Client c = Main.client;
         System.out.println(c.info.getClientPort());
-        System.out.println(s.getServerURL());
-        for (int i = 0; i < 10000; i++) {
-            c.getFile("test1.txt",s.getServerURL(), pi.getSharedDir());
+        for (int i = 0; i < 2000; i++) {
+            c.getFile("text2.txt","127.0.0.1:10001","Peer1");
         }
 
     }

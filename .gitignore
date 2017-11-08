@@ -10,11 +10,4 @@ Peer6/
 Peer7/
 Peer8/
 Interfaces/ServerInterface.class
-Peer/Client.class
-Peer/Main.class
-Peer/PeerInfo.class
-Peer/RemoteServerInfo.class
-Peer/Server.class
-Peer/Test$TestThread.class
-Peer/Test$mainThread.class
-Peer/Test.class
+Peer/*.class
